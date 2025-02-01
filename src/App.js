@@ -122,7 +122,7 @@ export default function Drafter() {
     }
 
     return (
-        <>
+        <div class="center">
             <form method="post" onSubmit={generate}>
                 <label>
                 Number of players: <input name="playerNumber" type="number" defaultValue={3}/>
@@ -131,9 +131,11 @@ export default function Drafter() {
                 <label>
                 Leader choices per player: <input name="leaderChoicesNumber" type="number" defaultValue={3}/>
                 </label>
+                <hr />
                 <label>
-                Civ choices per player: <input name="civChoicesNumber" type="number" defaultValue={3}/>
+                Civ choices per player: <input name="civChoicesNumber" type="number" defaultValue={3} />
                 </label>
+                <hr />
                 <p>
                     Age:
                     <label><input type="radio" name="age" value="0" defaultChecked={true}/> Antiquity</label>
@@ -151,7 +153,7 @@ export default function Drafter() {
                 civChoices={civChoices}
                 age={age}
             />
-        </>
+        </div>
     );
 }
   
