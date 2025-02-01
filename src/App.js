@@ -32,8 +32,10 @@ function SingleDraft({ player, leaderChoices, civChoices }) {
     }
 
     return (
+        <>
         <li key={player}>
             Player {player}:
+            <br></br>
             <ul>
                 Leaders:
                 {draftedLeaders}
@@ -43,10 +45,12 @@ function SingleDraft({ player, leaderChoices, civChoices }) {
                 {draftedCivs}
             </ul>
         </li>
+        <br></br>
+        </>
     );
 }
 
-function Drafted({ ready, players, leaderChoices, civChoices, age }) {
+function Drafted({ ready, players, leaderChoices, civChoices, age, bannedLeaders, bannedCivs }) {
     
     leaderPool = structuredClone(leaders);
     civPool = structuredClone(civsPerAge[age]);
@@ -55,17 +59,31 @@ function Drafted({ ready, players, leaderChoices, civChoices, age }) {
         return null;
     }
 
+    for (let i = 0; i < bannedLeaders.length; i++) {
+        const index = leaderPool.indexOf(bannedLeaders[i]);
+        if (index > -1) {
+            leaderPool.splice(index, 1);
+        }
+    }
+
+    for (let i = 0; i < bannedCivs.length; i++) {
+        const index = civPool.indexOf(bannedCivs[i]);
+        if (index > -1) {
+            civPool.splice(index, 1);
+        }
+    }
+
     const errors = [];
 
-    const availableLeaders = leaders.length;
-    const availableCivs = civsPerAge[age].length;
+    const availableLeaders = leaderPool.length;
+    const availableCivs = civPool.length;
 
     if (players * leaderChoices > availableLeaders) {
-        errors.push(<li>Not enough leaders to draft. Currently in game: {leaders.length}</li>)
+        errors.push(<li>Not enough leaders to draft. Currently available: {availableLeaders}</li>)
     }
 
     if (players * civChoices > availableCivs) {
-        errors.push(<li>Not enough civs in {ageNames[age]} age to draft. Currently in game: {availableCivs}</li>)
+        errors.push(<li>Not enough civs in {ageNames[age]} age to draft. Currently available: {availableCivs}</li>)
     }
 
     if (errors.length > 0) {
@@ -81,7 +99,7 @@ function Drafted({ ready, players, leaderChoices, civChoices, age }) {
     const drafts = [];
 
     for (let i = 1; i <= players; i++) {
-        drafts.push(<SingleDraft player={i} leaderChoices={leaderChoices} civChoices={civChoices}/>)
+        drafts.push(<SingleDraft player={i} leaderChoices={leaderChoices} civChoices={civChoices}/>);
     }
 
     return (
@@ -93,12 +111,70 @@ function Drafted({ ready, players, leaderChoices, civChoices, age }) {
     );
 }
 
+function LeaderBans() {
+
+    const leadersBans = [];
+
+    for (let i = 0; i < leaders.length; i++) {
+        leadersBans.push(<label>
+                            <input type="checkbox" name={leaders[i]} defaultChecked={false} /> {leaders[i]}
+                            <br/>
+                         </label>);
+    }
+
+    return leadersBans;
+}
+
+function AntiquityBans() {
+
+    const antiquityCivs = [];
+
+    for (let i = 0; i < civsPerAge[0].length; i++) {
+        antiquityCivs.push(<label>
+                            <input type="checkbox" name={civsPerAge[0][i]} defaultChecked={false} /> {civsPerAge[0][i]}
+                            <br/>
+                         </label>);
+    }
+
+    return antiquityCivs;
+}
+
+function ExplorationBans() {
+
+    const explorationCivs = [];
+
+    for (let i = 0; i < civsPerAge[1].length; i++) {
+        explorationCivs.push(<label>
+                            <input type="checkbox" name={civsPerAge[1][i]} defaultChecked={false} /> {civsPerAge[1][i]}
+                            <br/>
+                         </label>);
+    }
+
+    return explorationCivs;
+}
+
+function ModernBans() {
+
+    const modernCivs = [];
+
+    for (let i = 0; i < civsPerAge[2].length; i++) {
+        modernCivs.push(<label>
+                            <input type="checkbox" name={civsPerAge[2][i]} defaultChecked={false} /> {civsPerAge[2][i]}
+                            <br/>
+                         </label>);
+    }
+
+    return modernCivs;
+}
+
 export default function Drafter() {
 
     const [players, setPlayers] = useState(3);
     const [leaderChoices, setLeaderChoices] = useState(3);
     const [civChoices, setCivChoices] = useState(3);
     const [age, setAge] = useState(0);
+    const [bannedLeaders, setBannedLeaders] = useState([]);
+    const [bannedCivs, setBannedCivs] = useState([]);
     
     const [ready, setReady] = useState(false);
 
@@ -115,6 +191,28 @@ export default function Drafter() {
         setCivChoices(form.civChoicesNumber);
         setAge(form.age);
 
+        const newBannedLeaders = [];
+        const newBannedCivs = [];
+
+        for (let i = 0; i < leaders.length; i++) {
+            if (form[leaders[i]]) {
+                newBannedLeaders.push(leaders[i]);
+            } 
+        }
+
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < civsPerAge[i].length; j++) {
+                if (form[civsPerAge[i][j]]) {
+                    newBannedCivs.push(civsPerAge[i][j]);
+                }
+            }
+        }
+
+        console.log(newBannedLeaders);
+        
+        setBannedLeaders(newBannedLeaders);
+        setBannedCivs(newBannedCivs);
+
         setReady(true);
         
         console.log(`marcin ma malego`);
@@ -122,38 +220,73 @@ export default function Drafter() {
     }
 
     return (
-        <div class="center">
-            <form method="post" onSubmit={generate}>
-                <label>
-                Number of players: <input name="playerNumber" type="number" defaultValue={3}/>
-                </label>
-                <hr />
-                <label>
-                Leader choices per player: <input name="leaderChoicesNumber" type="number" defaultValue={3}/>
-                </label>
-                <hr />
-                <label>
-                Civ choices per player: <input name="civChoicesNumber" type="number" defaultValue={3} />
-                </label>
-                <hr />
-                <p>
-                    Age:
-                    <label><input type="radio" name="age" value="0" defaultChecked={true}/> Antiquity</label>
-                    <label><input type="radio" name="age" value="1" /> Exploration</label>
-                    <label><input type="radio" name="age" value="2" /> Modern</label>
-                </p>
-                <hr />
-                
-                <button type="submit" className="generateButton"> Generate </button>
-            </form>
-            <Drafted
-                ready={ready}
-                players={players}
-                leaderChoices={leaderChoices}
-                civChoices={civChoices}
-                age={age}
-            />
-        </div>
+        <>
+            <div class="alignment">
+                <div class="center">
+                    <form method="post" onSubmit={generate}>
+                        <div class="left">
+                            <label>
+                            Number of players 
+                            <br></br>
+                            <input name="playerNumber" type="number" defaultValue={3}/>
+                            </label>
+                            <hr />
+                            <label>
+                            Leader choices per player
+                            <br></br>
+                            <input name="leaderChoicesNumber" type="number" defaultValue={3}/>
+                            </label>
+                            <hr />
+                            <label>
+                            Civ choices per player
+                            <br></br>
+                            <input name="civChoicesNumber" type="number" defaultValue={3} />
+                            </label>
+                            <hr />
+                            <p class="ages">
+                                Age:
+                                <label><input type="radio" name="age" value="0" defaultChecked={true}/> Antiquity</label>
+                                <label><input type="radio" name="age" value="1" /> Exploration</label>
+                                <label><input type="radio" name="age" value="2" /> Modern</label>
+                            </p>
+                            <hr />
+                            <button type="submit" class="generateButton"> Draft </button>
+                            <Drafted
+                                ready={ready}
+                                players={players}
+                                leaderChoices={leaderChoices}
+                                civChoices={civChoices}
+                                age={age}
+                                bannedLeaders={bannedLeaders}
+                                bannedCivs={bannedCivs}
+                            />
+                        </div>
+                        <div class="right">
+                            <p>BANS</p>
+                            <hr />
+                            <div class="fleksi">
+                                <div>
+                                    <p>Leaders</p>
+                                    <LeaderBans/>
+                                </div>
+                                <div>
+                                    <p>Antiquity Civs</p>
+                                    <AntiquityBans/>
+                                </div>
+                                <div>
+                                    <p>Exploration Civs</p>
+                                    <ExplorationBans/>
+                                </div>
+                                <div>
+                                    <p>Modern Civs</p>
+                                    <ModernBans/>
+                                </div>
+                            </div>
+                        </div>
+                    </form>  
+                </div>
+            </div>
+        </>
     );
 }
   
